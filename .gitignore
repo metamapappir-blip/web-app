@@ -24,3 +24,6 @@ node_modules/
 !aniner-browser/src/*.exe
 !aniner-browser/assets/*.ico
 !aniner-browser/assets/*.png
+_nova_archive/
+scripts/
+package-lock.json

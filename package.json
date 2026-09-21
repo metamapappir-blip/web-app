@@ -1,32 +1,27 @@
 {
-  "name": "web-app",
-  "version": "4.7.3",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "node scripts/build.mjs",
-    "build:debug": "NOVA_BUILD_MODE=debug node scripts/build.mjs",
-    "check": "npm run build && node --check worker.js && wrangler deploy --dry-run --outdir .wrangler/dry-run",
-    "test": "npm run build && node --test",
-    "deploy": "npm run build && wrangler deploy"
+  "name": "aniner-browser",
+  "version": "1.0.0",
+  "description": "Aniner Browser - مرورگر فوق خفن نسل جدید، سریع‌تر از نور، امن‌تر از همیشه. جایگزین فایرفاکس با VPN رایگان و AdBlock هوشمند",
+  "main": "aniner-browser/main.js",
+  "author": "Aniner Team",
+  "license": "MIT",
+  "private": false,
+  "keywords": ["browser", "aniner", "firefox", "chrome", "adblock", "vpn", "privacy", "chromium", "webview2", "fast", "iran", "persian"],
+  "homepage": "https://github.com/metamapappir-blip/web-app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metamapappir-blip/web-app.git"
   },
-  "cloudflare": {
-    "bindings": {
-      "KV": {
-        "description": "Nova's compatibility and migration store. Cloudflare creates and binds it automatically."
-      },
-      "DB": {
-        "description": "Nova's primary D1 database for settings, users, usage, logs, and authentication."
-      },
-      "NOVA_CLAIM_TOKEN": {
-        "description": "Optional but recommended. A random string that ties first-time setup to you: with it set, the panel only accepts its first admin password at /install?claim=<value>, so nobody who finds the address before you can claim the panel. Generate one with `openssl rand -hex 16` and keep a copy. Leave blank to keep the old behaviour, where whoever opens /install first sets the password. You can change or remove it later in Settings, Variables and Secrets."
-      }
-    }
+  "scripts": {
+    "start": "electron aniner-browser",
+    "start:pyqt": "python aniner-browser/src/aniner_pyqt.py",
+    "build:c": "cd aniner-browser/src && zig cc -target x86_64-windows-gnu aniner.c -o Aniner.exe -municode -luser32 -lole32 -lshell32 -lshlwapi -lcomctl32 -loleaut32 -luuid -lgdi32",
+    "build:installer": "cd aniner-browser/src && zig cc -target x86_64-windows-gnu installer.c -o Aniner-Setup.exe -municode -luser32 -lole32 -lshell32 -lshlwapi -loleaut32 -luuid -lgdi32",
+    "build:win": "electron-builder --win --x64 portable",
+    "build:all": "npm run build:c && npm run build:installer"
   },
   "devDependencies": {
-    "@types/node": "^26.1.2",
-    "esbuild": "^0.28.1",
-    "html-minifier-terser": "^7.2.0",
-    "wrangler": "^4.116.0"
+    "electron": "^30.0.0",
+    "electron-builder": "^24.9.1"
   }
 }
