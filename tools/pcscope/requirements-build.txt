@@ -1,0 +1,4 @@
+psutil>=5.9,<8
+pyinstaller>=6.3
+arabic-reshaper>=3.0.0
+python-bidi>=0.4.2

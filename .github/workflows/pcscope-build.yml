@@ -1,0 +1,180 @@
+name: PCScope Windows build
+
+# Builds the PCScope hardware tester (.exe) on a Windows runner.
+#   - every push that touches tools/pcscope  -> build + upload a build artifact
+#   - every tag named pcscope-v*             -> also publish a GitHub Release
+on:
+  push:
+    branches: ["**"]
+    tags: ["pcscope-v*"]
+    paths:
+      - "tools/pcscope/**"
+      - ".github/workflows/pcscope-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: tools/pcscope
+
+jobs:
+  build:
+    name: Build PCScope.exe (windows-latest)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: "x64"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+
+      # Runner logs are not always convenient to reach, so every verification
+      # step mirrors its output into a workflow annotation (visible in the UI
+      # and through the checks API).
+      - name: Verify on a real machine (headless run)
+        shell: bash
+        run: |
+          set +e
+          python main.py --cli --quick --only system,cpu,memory,disk,disk_health,gpu,thermal,battery --html build-check.html --json build-check.json 2>&1 | tee cli-output.txt
+          cli_exit=${PIPESTATUS[0]}
+          if [ "$cli_exit" -ne 0 ]; then level=error; else level=notice; fi
+          EXIT_CODE=$cli_exit ANNOTATION_LEVEL=$level TITLE="headless run" \
+            python -c "import os,pathlib; lines=pathlib.Path('cli-output.txt').read_text(encoding='utf-8',errors='replace').strip().splitlines(); tail='\n'.join(lines[-25:])[-3400:]; print('::'+os.environ['ANNOTATION_LEVEL']+' title='+os.environ['TITLE']+' (exit '+os.environ['EXIT_CODE']+')::'+tail.replace('%','%25').replace('\r','').replace('\n','%0A'))"
+          exit 0
+
+      - name: Smoke tests (probes, reports, cli)
+        shell: bash
+        run: |
+          set +e
+          python tests/test_smoke.py test_catalogue test_probes test_reports test_stop test_cli 2>&1 | tee smoke-output.txt
+          exit_code=${PIPESTATUS[0]}
+          if [ "$exit_code" -ne 0 ]; then level=error; else level=notice; fi
+          EXIT_CODE=$exit_code ANNOTATION_LEVEL=$level TITLE="smoke: probes, reports, cli" \
+            python -c "import os,pathlib; lines=pathlib.Path('smoke-output.txt').read_text(encoding='utf-8',errors='replace').strip().splitlines(); tail='\n'.join(lines[-30:])[-3400:]; print('::'+os.environ['ANNOTATION_LEVEL']+' title='+os.environ['TITLE']+' (exit '+os.environ['EXIT_CODE']+')::'+tail.replace('%','%25').replace('\r','').replace('\n','%0A'))"
+          exit $exit_code
+
+      - name: Smoke tests (GUI)
+        shell: bash
+        run: |
+          set +e
+          python tests/test_smoke.py test_gui 2>&1 | tee gui-output.txt
+          exit_code=${PIPESTATUS[0]}
+          if [ "$exit_code" -ne 0 ]; then level=error; else level=notice; fi
+          EXIT_CODE=$exit_code ANNOTATION_LEVEL=$level TITLE="smoke: gui" \
+            python -c "import os,pathlib; lines=pathlib.Path('gui-output.txt').read_text(encoding='utf-8',errors='replace').strip().splitlines(); tail='\n'.join(lines[-30:])[-3400:]; print('::'+os.environ['ANNOTATION_LEVEL']+' title='+os.environ['TITLE']+' (exit '+os.environ['EXIT_CODE']+')::'+tail.replace('%','%25').replace('\r','').replace('\n','%0A'))"
+          exit $exit_code
+
+      - name: Build the executables
+        run: pyinstaller --noconfirm --clean pcscope.spec
+
+      - name: Package and checksum
+        shell: pwsh
+        run: |
+          $version = python -c "import sys; sys.path.insert(0, '.'); from pcscope.util import APP_VERSION; print(APP_VERSION)"
+          $zip = "dist/PCScope-$version-windows-x64.zip"
+          Compress-Archive -Path dist/PCScope.exe,dist/PCScopeCLI.exe,README.md,README.fa.md -DestinationPath $zip -Force
+          Get-ChildItem dist -Filter *.exe | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)"
+          } | Out-File -FilePath dist/SHA256SUMS.txt -Encoding utf8
+          Get-FileHash $zip -Algorithm SHA256 | ForEach-Object {
+            "$($_.Hash.ToLower())  $(Split-Path $zip -Leaf)"
+          } | Out-File -FilePath dist/SHA256SUMS.txt -Encoding utf8 -Append
+          "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "ZIP_PATH=$zip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Get-Content dist/SHA256SUMS.txt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PCScope-windows-x64
+          path: |
+            tools/pcscope/dist/PCScope.exe
+            tools/pcscope/dist/PCScopeCLI.exe
+            tools/pcscope/dist/PCScope-*.zip
+            tools/pcscope/dist/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          version=$(python -c "import sys; sys.path.insert(0, '.'); from pcscope.util import APP_VERSION; print(APP_VERSION)")
+          zip="dist/PCScope-$version-windows-x64.zip"
+          tag="${GITHUB_REF_NAME}"
+
+          cat > release-notes.md <<'NOTES'
+          PCScope - standalone Windows build.
+
+          **Download:** `PCScope.exe` (windowed app), or the `.zip` bundle if your browser or
+          antivirus is fussy about single-file executables. `PCScopeCLI.exe` runs the same tests
+          from a terminal and writes HTML / TXT / JSON reports.
+
+          `SHA256SUMS.txt` lists the checksum of each file. Verify with:
+
+          ```bat
+          certutil -hashfile PCScope.exe SHA256
+          ```
+
+          - System information, CPU, memory, disk, disk health, GPU, network, battery and sensors
+          - Monitor (dead pixel) test and speaker test
+          - 5/10/30 minute stability stress with a live temperature chart
+          - Bilingual UI (English / Persian) and HTML, TXT and JSON reports
+
+          ---
+
+          **PCScope** - بیلد مستقل ویندوز.
+
+          فایل `PCScope.exe` (برنامه گرافیکی) یا بسته `.zip` را دانلود کنید.
+          `PCScopeCLI.exe` همان تست‌ها را در خط فرمان اجرا می‌کند و گزارش
+          HTML / TXT / JSON می‌نویسد. فایل `SHA256SUMS.txt` چک‌سام همه فایل‌ها را دارد.
+
+          - اطلاعات سیستم، پردازنده، رم، دیسک، سلامت دیسک، کارت گرافیک، شبکه، باتری و سنسورها
+          - تست مانیتور (پیکسل سوخته) و تست اسپیکر
+          - تست استرس ۵، ۱۰ و ۳۰ دقیقه‌ای با نمودار زنده دما
+          - رابط دو زبانه (انگلیسی / فارسی) و خروجی HTML، TXT و JSON
+
+          **نکته:** ویندوز و برخی آنتی‌ویروس‌ها فایل‌های اجرایی امضا‌نشده را ناشناس نشان می‌دهند؛
+          روی «More info > Run anyway» بزنید. برای دیدن سنسورهای دما، برنامه را با گزینه
+          «Run as administrator» اجرا کنید.
+          NOTES
+
+          annotate() {  # level, title, text
+            python -c "import os,sys; text=sys.argv[3].replace('%','%25').replace('\r','').replace('\n','%0A'); print('::'+sys.argv[1]+' title='+sys.argv[2]+'::'+text[-3400:])" "$1" "$2" "$3"
+          }
+
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1
+          view_exit=$?
+          release_exit=0
+          if [ "$view_exit" -ne 0 ]; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" --title "PCScope $version" --notes-file release-notes.md 2>&1 | tee release-create.log
+            release_exit=${PIPESTATUS[0]}
+            annotate notice "release create (exit $release_exit)" "$(tail -20 release-create.log)"
+          fi
+
+          if [ "$release_exit" -eq 0 ]; then
+            gh release upload "$tag" --repo "$GITHUB_REPOSITORY" dist/PCScope.exe dist/PCScopeCLI.exe "$zip" dist/SHA256SUMS.txt --clobber 2>&1 | tee release-upload.log
+            release_exit=${PIPESTATUS[0]}
+            annotate notice "release upload (exit $release_exit)" "$(tail -20 release-upload.log)"
+          else
+            annotate error "release create failed" "$(tail -20 release-create.log)"
+          fi
+
+          if [ "$release_exit" -ne 0 ]; then
+            echo "tag=$tag version=$version" >&2
+            ls -la dist >&2 || true
+          fi
+          exit $release_exit

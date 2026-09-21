@@ -122,6 +122,21 @@ The protection is there to deter copying and resale. To be honest about what it 
 
 On licensing: Nova releases through 4.2.0 were published under the MIT license, and that historical grant still stands for those versions. Starting with 4.3.0, Nova-authored changes are under PolyForm Noncommercial. You can self-host, study, and modify Nova for noncommercial use, but reselling access or running paid hosting is not permitted without written permission. So the panel is no longer MIT or fully open source. See the [LICENSE](LICENSE) file for the exact terms.
 
+## Tools in this repository
+
+### PCScope - a PC hardware tester for Windows
+
+[PCScope](tools/pcscope/README.md) is a small, standalone hardware tester that lives in
+`tools/pcscope/`. It inventories the machine, benchmarks the CPU, memory and disks, checks the
+GPU, display, network, battery and sensors, hunts for dead pixels, and runs a stability stress
+test - then exports an HTML, TXT or JSON report. It has English and Persian (فارسی) interfaces
+and ships as a single `.exe` with no installer.
+
+**Download the [latest PCScope release](https://github.com/metamapappir-blip/web-app/releases/tag/pcscope-v1.0.0).**
+
+PCScope is an independent tool and is not part of the Nova Proxy brand; it is released under the
+same [PolyForm Noncommercial license](LICENSE) as this repository.
+
 ---
 
 <div align="center">
