@@ -16,6 +16,8 @@ on:
         description: "Existing release tag to update"
         required: true
         default: "pcscope-v1.0.0"
+  push:
+    tags: ["pcscope-v*"]
 
 permissions:
   contents: write
@@ -33,27 +35,44 @@ jobs:
       - name: Checkout the tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.tag }}
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
+
+      # Moving the tag triggers this workflow again, so stop as soon as the
+      # executable is already part of the tag.
+      - name: Check whether the executable is already in the tag
+        id: check
+        shell: bash
+        run: |
+          if [ -f pcscope-bin/PCScope.exe ]; then
+            echo "skip=yes" >> "$GITHUB_OUTPUT"
+            echo "PCScope.exe is already in this tag - nothing to do."
+          else
+            echo "skip=no" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Python
+        if: steps.check.outputs.skip != 'yes'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           architecture: "x64"
 
       - name: Install dependencies
+        if: steps.check.outputs.skip != 'yes'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-build.txt
 
       - name: Build the executable
+        if: steps.check.outputs.skip != 'yes'
         run: pyinstaller --noconfirm --clean pcscope.spec
 
       - name: Commit the executable and move the tag
+        if: steps.check.outputs.skip != 'yes'
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.event.inputs.tag }}
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
         run: |
           set -e
           mkdir -p pcscope-bin
