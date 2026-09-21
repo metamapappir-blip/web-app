@@ -1,0 +1,22 @@
+name = "aniner-backend"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENV = "production"
+VERSION = "2.0.0"
+
+# KV for sync data
+[[kv_namespaces]]
+binding = "ANINER_KV"
+id = "aniner_kv_placeholder"
+preview_id = "aniner_kv_preview"
+
+# D1 for users
+[[d1_databases]]
+binding = "ANINER_DB"
+database_name = "aniner_db"
+database_id = "aniner_db_placeholder"
+
+[triggers]
+crons = ["0 0 * * *"]  # Daily update adblock list
