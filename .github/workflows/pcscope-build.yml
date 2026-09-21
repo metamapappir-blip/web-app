@@ -80,31 +80,34 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = $env:GITHUB_REF_NAME
-          $notes = @"
-          PCScope $env:APP_VERSION - standalone Windows build.
-
-          **Download:** ``PCScope.exe`` (windowed app) or the ``.zip`` bundle if your browser or
-          antivirus is fussy about single-file executables. ``PCScopeCLI.exe`` runs the same tests
-          from a terminal and writes HTML / TXT / JSON reports.
-
-          ``SHA256SUMS.txt`` lists the checksum of every file - verify with
-          ``certutil -hashfile PCScope.exe SHA256``.
-
-          ---
-
-          **PCScope $env:APP_VERSION** - بیلد مستقل ویندوز.
-
-          برای دانلود ``PCScope.exe`` (برنامه گرافیکی) یا فایل ``.zip`` را بگیرید.
-          ``PCScopeCLI.exe`` همان تست‌ها را در خط فرمان اجرا می‌کند و گزارش
-          HTML / TXT / JSON می‌نویسد. فایل ``SHA256SUMS.txt`` چک‌سام همه فایل‌ها را دارد.
-
-          **نکته:** ویندوز و برخی آنتی‌ویروس‌ها فایل‌های exe امضا‌نشده را ناشناس نشان می‌دهند؛
-          روی «More info > Run anyway» بزنید. برای دسترسی به سنسورهای دما، برنامه را
-          «Run as administrator» اجرا کنید.
-          "@
+          $notes = @(
+            "PCScope $env:APP_VERSION - standalone Windows build.",
+            "",
+            "**Download:** ``PCScope.exe`` (windowed app), or the ``.zip`` bundle if your browser",
+            "or antivirus is fussy about single-file executables. ``PCScopeCLI.exe`` runs the same",
+            "tests from a terminal and writes HTML / TXT / JSON reports.",
+            "",
+            "``SHA256SUMS.txt`` lists the checksum of each file. Verify with:",
+            "",
+            "```bat",
+            "certutil -hashfile PCScope.exe SHA256",
+            "```",
+            "",
+            "---",
+            "",
+            "**PCScope $env:APP_VERSION** - بیلد مستقل ویندوز.",
+            "",
+            "فایل ``PCScope.exe`` (برنامه گرافیکی) یا بسته ``.zip`` را دانلود کنید.",
+            "``PCScopeCLI.exe`` همان تست‌ها را در خط فرمان اجرا می‌کند و گزارش",
+            "HTML / TXT / JSON می‌نویسد. فایل ``SHA256SUMS.txt`` چک‌سام همه فایل‌ها را دارد.",
+            "",
+            "**نکته:** ویندوز و برخی آنتی‌ویروس‌ها فایل‌های اجرایی امضا‌نشده را ناشناس نشان می‌دهند؛",
+            "روی «More info > Run anyway» بزنید. برای دیدن سنسورهای دما، برنامه را",
+            "با گزینه «Run as administrator» اجرا کنید."
+          ) -join "`n"
 
           $notesPath = Join-Path $env:RUNNER_TEMP "release-notes.md"
-          Set-Content -Path $notesPath -Value ($notes -replace "`r`n", "`n") -Encoding utf8
+          Set-Content -Path $notesPath -Value $notes -Encoding utf8
 
           gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null
           if ($LASTEXITCODE -ne 0) {
