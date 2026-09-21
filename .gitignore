@@ -11,3 +11,13 @@ node_modules/
 # Deploy to Cloudflare to decide which secrets to prompt for. Real secrets
 # still stay out via the .dev.vars rules above.
 !.dev.vars.example
+
+# PCScope (tools/pcscope) - local build and virtualenv output
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+tools/pcscope/build-check.html
+tools/pcscope/build-check.json
