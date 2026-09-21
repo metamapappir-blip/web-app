@@ -157,8 +157,9 @@ jobs:
           }
 
           gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1
+          view_exit=$?
           release_exit=0
-          if [ $? -ne 0 ]; then
+          if [ "$view_exit" -ne 0 ]; then
             gh release create "$tag" --repo "$GITHUB_REPOSITORY" --title "PCScope $version" --notes-file release-notes.md 2>&1 | tee release-create.log
             release_exit=${PIPESTATUS[0]}
             annotate notice "release create (exit $release_exit)" "$(tail -20 release-create.log)"
