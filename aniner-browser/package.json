@@ -1,0 +1,95 @@
+{
+  "name": "aniner-browser",
+  "version": "1.0.0",
+  "description": "Aniner - مرورگر فوق خفن و سریع، جایگزین فایرفاکس با قابلیت های بی نظیر | Ultra-fast, secure, feature-rich browser like Firefox",
+  "main": "main.js",
+  "author": "Aniner Team <https://github.com/metamapappir-blip/web-app>",
+  "license": "MIT",
+  "private": false,
+  "keywords": ["browser", "aniner", "firefox", "chromium", "adblock", "vpn", "privacy", "persian", "fast"],
+  "homepage": "https://github.com/metamapappir-blip/web-app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metamapappir-blip/web-app.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --x64 portable",
+    "build:win:installer": "electron-builder --win --x64 nsis",
+    "build:linux": "electron-builder --linux --x64 AppImage deb",
+    "build:all": "electron-builder --win --linux --x64",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.aniner.browser",
+    "productName": "Aniner",
+    "copyright": "Copyright © 2026 Aniner Team",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        },
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png",
+      "artifactName": "Aniner-${version}-Setup.${ext}",
+      "publisherName": "Aniner Browser"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Aniner Browser",
+      "artifactName": "Aniner-${version}-Setup.${ext}",
+      "installerIcon": "assets/icon.png",
+      "uninstallerIcon": "assets/icon.png"
+    },
+    "portable": {
+      "artifactName": "Aniner-${version}-Portable.exe"
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "assets/icon.png",
+      "category": "Network",
+      "artifactName": "Aniner-${version}.${ext}"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.utilities",
+      "artifactName": "Aniner-${version}.${ext}"
+    }
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.9.1"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  }
+}

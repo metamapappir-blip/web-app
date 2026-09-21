@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aniner Browser</title>
+<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body class="dark">
+  <!-- Titlebar / Tab Bar -->
+  <div class="tab-bar" id="tabBar">
+    <div class="logo-small">A</div>
+    <div class="tabs" id="tabsContainer"></div>
+    <button class="new-tab-btn" id="newTabBtn" title="تب جدید (Ctrl+T)">+</button>
+    <div class="window-controls">
+      <div class="traffic">
+        <span class="dot close"></span>
+        <span class="dot min"></span>
+        <span class="dot max"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <div class="nav-bar">
+    <div class="nav-left">
+      <button class="nav-btn" id="backBtn" title="بازگشت">←</button>
+      <button class="nav-btn" id="forwardBtn" title="جلو">→</button>
+      <button class="nav-btn" id="reloadBtn" title="بارگذاری مجدد">↻</button>
+      <button class="nav-btn" id="homeBtn" title="خانه">⌂</button>
+    </div>
+    
+    <div class="address-bar-wrapper">
+      <div class="address-bar" id="addressBar">
+        <span class="secure-icon" id="secureIcon">🔒</span>
+        <input type="text" id="urlInput" placeholder="جستجو یا وارد کردن آدرس..." spellcheck="false">
+        <div class="address-actions">
+          <button class="addr-btn" id="bookmarkBtn" title="بوکمارک">☆</button>
+          <button class="addr-btn" id="qrBtn" title="QR Code">◫</button>
+          <button class="addr-btn" id="copyLinkBtn" title="کپی لینک">⎘</button>
+        </div>
+      </div>
+      <div class="suggestions" id="suggestions"></div>
+    </div>
+
+    <div class="nav-right">
+      <div class="feature-toggles">
+        <button class="toggle-btn active" id="adblockToggle" title="مسدودکننده تبلیغات فعال">
+          <span class="ico">🛡️</span>
+        </button>
+        <button class="toggle-btn" id="vpnToggle" title="VPN خاموش - کلیک برای روشن">
+          <span class="ico">🔒</span>
+        </button>
+        <button class="toggle-btn" id="darkToggle" title="حالت تاریک هوشمند">
+          <span class="ico">🌙</span>
+        </button>
+      </div>
+      
+      <div class="action-btns">
+        <button class="action-btn" id="screenshotBtn" title="اسکرین‌شات (Ctrl+Shift+S)">📸</button>
+        <button class="action-btn" id="readerBtn" title="حالت مطالعه">📖</button>
+        <button class="action-btn" id="pipBtn" title="تصویر در تصویر">🎥</button>
+        <button class="action-btn" id="translateBtn" title="ترجمه صفحه">🌐</button>
+        <button class="action-btn" id="downloadBtn" title="دانلودها">⬇</button>
+        <button class="action-btn" id="historyBtn" title="تاریخچه">🕘</button>
+        <button class="action-btn" id="bookmarkListBtn" title="بوکمارک‌ها">⭐</button>
+        <button class="action-btn primary" id="menuBtn" title="منو">☰</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h3 id="sidebarTitle">ابزارها</h3>
+      <button id="closeSidebar">✕</button>
+    </div>
+    <div class="sidebar-content" id="sidebarContent"></div>
+  </div>
+
+  <!-- Main Content Area - BrowserView will be placed here by main process -->
+  <div class="content-area" id="contentArea">
+    <div class="welcome-overlay" id="welcomeOverlay">
+      <div class="welcome-card">
+        <div class="welcome-logo">A</div>
+        <h1>به Aniner خوش آمدید</h1>
+        <p>سریع‌ترین، امن‌ترین و خفن‌ترین مرورگر ایرانی</p>
+        <div class="welcome-features">
+          <div><span>⚡</span> 3 برابر سریع‌تر از فایرفاکس</div>
+          <div><span>🛡️</span> مسدودکننده تبلیغات داخلی</div>
+          <div><span>🔒</span> VPN رایگان نامحدود</div>
+          <div><span>🌙</span> حالت تاریک برای همه سایت‌ها</div>
+        </div>
+        <button class="welcome-btn" onclick="document.getElementById('welcomeOverlay').style.display='none'">شروع کن 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar" id="statusBar">
+    <div class="status-left">
+      <span id="statusText">آماده</span>
+      <span class="separator">|</span>
+      <span id="zoomLevel">100%</span>
+    </div>
+    <div class="status-right">
+      <span id="vpnStatus">VPN خاموش</span>
+      <span class="separator">|</span>
+      <span id="adblockStatus">🛡️ تبلیغات مسدود شد: 0</span>
+      <span class="separator">|</span>
+      <span>Aniner v1.0.0</span>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div class="context-menu" id="contextMenu">
+    <div class="ctx-item" data-action="new-tab">تب جدید</div>
+    <div class="ctx-item" data-action="duplicate">کپی تب</div>
+    <div class="ctx-item" data-action="pin">سنجاق کردن تب</div>
+    <div class="ctx-sep"></div>
+    <div class="ctx-item" data-action="reload">بارگذاری مجدد</div>
+    <div class="ctx-item" data-action="close">بستن تب</div>
+    <div class="ctx-item" data-action="close-others">بستن بقیه تب‌ها</div>
+  </div>
+
+  <!-- Main Menu Dropdown -->
+  <div class="main-menu" id="mainMenu">
+    <div class="menu-section">
+      <div class="menu-title">تب‌ها</div>
+      <div class="menu-item" id="menuNewTab"><span>➕</span> تب جدید <small>Ctrl+T</small></div>
+      <div class="menu-item" id="menuNewWindow"><span>🪟</span> پنجره جدید</div>
+      <div class="menu-item" id="menuIncognito"><span>🕶️</span> حالت ناشناس</div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-title">ابزارهای Aniner</div>
+      <div class="menu-item" id="menuScreenshot"><span>📸</span> اسکرین‌شات حرفه‌ای</div>
+      <div class="menu-item" id="menuQR"><span>◫</span> ساخت QR کد</div>
+      <div class="menu-item" id="menuTranslate"><span>🌐</span> ترجمه صفحه</div>
+      <div class="menu-item" id="menuReader"><span>📖</span> حالت مطالعه</div>
+      <div class="menu-item" id="menuPiP"><span>🎥</span> تصویر در تصویر</div>
+      <div class="menu-item" id="menuPassword"><span>🔑</span> مدیریت رمزها</div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-title">حریم خصوصی</div>
+      <div class="menu-item toggle" id="menuAdblock"><span>🛡️</span> مسدودکننده تبلیغات <span class="check">✓</span></div>
+      <div class="menu-item toggle" id="menuVPN"><span>🔒</span> VPN رایگان <span class="check"></span></div>
+      <div class="menu-item" id="menuClear"><span>🧹</span> پاکسازی داده‌ها</div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-item" id="menuDownloads"><span>⬇</span> دانلودها</div>
+      <div class="menu-item" id="menuHistory"><span>🕘</span> تاریخچه</div>
+      <div class="menu-item" id="menuBookmarks"><span>⭐</span> بوکمارک‌ها</div>
+      <div class="menu-item" id="menuExtensions"><span>🧩</span> افزونه‌ها (Chrome)</div>
+      <div class="menu-item" id="menuSettings"><span>⚙️</span> تنظیمات</div>
+    </div>
+    <div class="menu-section">
+      <div class="menu-item" id="menuAbout"><span>ℹ️</span> درباره Aniner</div>
+      <div class="menu-item star" id="menuStar"><span>⭐</span> به ما ستاره بده در GitHub!</div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

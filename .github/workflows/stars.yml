@@ -1,0 +1,24 @@
+name: ⭐ Star Growth Automation
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Daily
+  workflow_dispatch:
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Create promotion issue
+        uses: peter-evans/create-issue-from-file@v5
+        with:
+          title: "🔥 Aniner Browser - Let's get 10k stars! ⭐"
+          content-filepath: .github/STAR_PROMOTION.md
+          labels: enhancement, promotion
+
+      - name: Update README with latest stars
+        run: |
+          echo "Updating star count..."
+          # This would update badges dynamically

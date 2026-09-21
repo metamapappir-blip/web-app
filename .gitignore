@@ -11,3 +11,16 @@ node_modules/
 # Deploy to Cloudflare to decide which secrets to prompt for. Real secrets
 # still stay out via the .dev.vars rules above.
 !.dev.vars.example
+
+# Allow Aniner Browser EXE files (real browser)
+!Aniner.exe
+!Aniner-Setup.exe
+!WebView2Loader.dll
+!icon.ico
+!aniner-browser/dist/*.exe
+!aniner-browser/dist/*.dll
+!aniner-browser/dist/*.ico
+!aniner-browser/dist/*.zip
+!aniner-browser/src/*.exe
+!aniner-browser/assets/*.ico
+!aniner-browser/assets/*.png
