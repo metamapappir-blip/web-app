@@ -261,8 +261,14 @@ def memory_benchmark(
 # --------------------------------------------------------------------------- #
 # disk
 # --------------------------------------------------------------------------- #
-def _write_all(fd: int, payload: bytes) -> int:
-    """``os.write`` may write less than asked - loop until the buffer is gone."""
+def _write_at(fd: int, payload: bytes, offset: Optional[int] = None) -> int:
+    """Write the whole buffer, seeking first when ``offset`` is given.
+
+    ``os.write`` may write less than asked, and ``os.pwrite`` does not exist on
+    Windows, so this does the loop and the seek by hand.
+    """
+    if offset is not None:
+        os.lseek(fd, offset, os.SEEK_SET)
     view = memoryview(payload)
     written = 0
     total = len(payload)
@@ -271,13 +277,19 @@ def _write_all(fd: int, payload: bytes) -> int:
     return written
 
 
-def _pwrite_all(fd: int, payload: bytes, offset: int) -> int:
-    view = memoryview(payload)
-    written = 0
-    total = len(payload)
-    while written < total:
-        written += os.pwrite(fd, view[written:], offset + written)
-    return written
+def _read_at(fd: int, size: int, offset: Optional[int] = None) -> bytes:
+    """Read ``size`` bytes, seeking first when ``offset`` is given."""
+    if offset is not None:
+        os.lseek(fd, offset, os.SEEK_SET)
+    chunks: List[bytes] = []
+    remaining = size
+    while remaining > 0:
+        data = os.read(fd, min(remaining, 1 << 20))
+        if not data:
+            break
+        chunks.append(data)
+        remaining -= len(data)
+    return b"".join(chunks)
 
 
 def disk_benchmark(
@@ -317,7 +329,7 @@ def disk_benchmark(
             for index in range(chunks):
                 if _stopped(stop):
                     raise KeyboardInterrupt
-                _write_all(fd, payload)
+                _write_at(fd, payload)
                 _tick(progress, 0.4 * (index + 1) / chunks, "status.running")
             os.fsync(fd)
         finally:
@@ -330,12 +342,7 @@ def disk_benchmark(
             for index in range(chunks):
                 if _stopped(stop):
                     raise KeyboardInterrupt
-                data = b""
-                while len(data) < chunk:
-                    more = os.read(fd, chunk - len(data))
-                    if not more:
-                        break
-                    data += more
+                data = _read_at(fd, chunk)
                 if len(data) == chunk and zlib.crc32(data) != crcs[0]:
                     valid = False
                 _tick(progress, 0.4 + 0.35 * (index + 1) / chunks, "status.running")
@@ -352,12 +359,12 @@ def disk_benchmark(
             for offset in positions:
                 if _stopped(stop):
                     raise KeyboardInterrupt
-                _pwrite_all(fd, block4k, offset)
+                _write_at(fd, block4k, offset)
             os.fsync(fd)
             for offset in positions:
                 if _stopped(stop):
                     raise KeyboardInterrupt
-                os.pread(fd, 4096, offset)
+                _read_at(fd, 4096, offset)
         finally:
             os.close(fd)
         iops = (2 * len(positions)) / max(time.perf_counter() - start, 1e-6)
