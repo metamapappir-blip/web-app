@@ -25,6 +25,20 @@
 بگیرید. هیچ چیز نصب نمی‌شود و تنها فایلی که برنامه خارج از پوشه خودش می‌سازد،
 گزارشی است که خودتان ذخیره می‌کنید.
 
+**لینک مستقیم دانلود:** <https://github.com/metamapappir-blip/web-app/releases/download/pcscope-v1.0.0/PCScope.exe>
+
+اگر ترجیح می‌دهید با PowerShell انجام شود (دانلود، بررسی چک‌سام و اجرا):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Download-PCScope.ps1 -AsAdministrator
+```
+
+اسکریپت `Download-PCScope.ps1` (و فایل `Download-PCScope.bat` برای اجرا با دو کلیک)
+فایل اجرایی را از Release می‌گیرد، چک‌سام SHA-256 آن را با `SHA256SUMS.txt` مقایسه
+می‌کند، قفل «دانلود از اینترنت» را برمی‌دارد و برنامه را اجرا می‌کند. با
+`-DownloadOnly` فقط دانلود انجام می‌شود و با `-Destination C:\Tools` می‌توانید
+پوشه دیگری را انتخاب کنید.
+
 ویندوز برای فایل‌های اجرایی امضا‌نشده هشدار می‌دهد: روی
 **More info ← Run anyway** بزنید. برای اطمینان می‌توانید چک‌سام فایل را با
 `SHA256SUMS.txt` مقایسه کنید:

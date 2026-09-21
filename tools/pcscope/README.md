@@ -25,6 +25,19 @@ Grab **`PCScope.exe`** from the
 Double-click it - nothing is installed, and the only file it creates outside its
 own folder is the report you ask it to save.
 
+**Direct download:** <https://github.com/metamapappir-blip/web-app/releases/download/pcscope-v1.0.0/PCScope.exe>
+
+One-liner if you prefer PowerShell (downloads, verifies the checksum and starts it):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\Download-PCScope.ps1 -AsAdministrator
+```
+
+`Download-PCScope.ps1` (and the `Download-PCScope.bat` wrapper for double-clicking)
+fetch the executable from the release, compare its SHA-256 with the published
+`SHA256SUMS.txt`, unblock it and launch it. Add `-DownloadOnly` to fetch without
+starting, or `-Destination C:\Tools` to choose another folder.
+
 Windows SmartScreen warns about unsigned executables from new projects: choose
 **More info → Run anyway**. `SHA256SUMS.txt` in the release lets you verify the
 download:

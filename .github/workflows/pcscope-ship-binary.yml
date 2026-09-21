@@ -1,0 +1,68 @@
+name: PCScope - ship the executable inside a tag
+
+# Manual helper: rebuilds PCScope, commits the produced PCScope.exe into the
+# given release tag and force-moves the tag to that commit.
+#
+# Why: the release assets are hosted on a CDN that is not reachable from every
+# environment, while a tag archive is plain git (codeload / "Source code" zip).
+# Keeping the binary in the tag - never in a source branch - leaves the history
+# and pull requests of the repository untouched.
+#
+# Run it with:  gh workflow run pcscope-ship-binary.yml -f tag=pcscope-v1.0.0
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to update"
+        required: true
+        default: "pcscope-v1.0.0"
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: tools/pcscope
+
+jobs:
+  ship:
+    name: Build and commit PCScope.exe to ${{ github.event.inputs.tag }}
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: "x64"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+
+      - name: Build the executable
+        run: pyinstaller --noconfirm --clean pcscope.spec
+
+      - name: Commit the executable and move the tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.event.inputs.tag }}
+        run: |
+          set -e
+          mkdir -p pcscope-bin
+          cp dist/PCScope.exe pcscope-bin/PCScope.exe
+          ls -la pcscope-bin
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f pcscope-bin/PCScope.exe
+          git commit -m "PCScope $TAG: ship the built executable inside the tag"
+          git tag -f "$TAG"
+          git push --force origin "refs/tags/$TAG"
+          echo "Tag $TAG now points at $(git rev-parse --short HEAD)"
