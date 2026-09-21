@@ -261,6 +261,25 @@ def memory_benchmark(
 # --------------------------------------------------------------------------- #
 # disk
 # --------------------------------------------------------------------------- #
+def _write_all(fd: int, payload: bytes) -> int:
+    """``os.write`` may write less than asked - loop until the buffer is gone."""
+    view = memoryview(payload)
+    written = 0
+    total = len(payload)
+    while written < total:
+        written += os.write(fd, view[written:])
+    return written
+
+
+def _pwrite_all(fd: int, payload: bytes, offset: int) -> int:
+    view = memoryview(payload)
+    written = 0
+    total = len(payload)
+    while written < total:
+        written += os.pwrite(fd, view[written:], offset + written)
+    return written
+
+
 def disk_benchmark(
     size_bytes: Optional[int] = None,
     path: Optional[str] = None,
@@ -298,7 +317,7 @@ def disk_benchmark(
             for index in range(chunks):
                 if _stopped(stop):
                     raise KeyboardInterrupt
-                os.write(fd, payload)
+                _write_all(fd, payload)
                 _tick(progress, 0.4 * (index + 1) / chunks, "status.running")
             os.fsync(fd)
         finally:
@@ -333,7 +352,7 @@ def disk_benchmark(
             for offset in positions:
                 if _stopped(stop):
                     raise KeyboardInterrupt
-                os.pwrite(fd, block4k, offset)
+                _pwrite_all(fd, block4k, offset)
             os.fsync(fd)
             for offset in positions:
                 if _stopped(stop):

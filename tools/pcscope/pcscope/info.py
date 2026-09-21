@@ -456,23 +456,43 @@ def display_info() -> Dict[str, Any]:
                 ("dmPelsHeight", wintypes.DWORD),
                 ("dmDisplayFlags", wintypes.DWORD),
                 ("dmDisplayFrequency", wintypes.DWORD),
+                # The remaining fields are unused here, but the structure must
+                # match sizeof(DEVMODEW) exactly: EnumDisplaySettings writes the
+                # whole thing, and a short buffer would corrupt memory.
+                ("dmICMMethod", wintypes.DWORD),
+                ("dmICMIntent", wintypes.DWORD),
+                ("dmMediaType", wintypes.DWORD),
+                ("dmDitherType", wintypes.DWORD),
+                ("dmReserved1", wintypes.DWORD),
+                ("dmReserved2", wintypes.DWORD),
+                ("dmPanningWidth", wintypes.DWORD),
+                ("dmPanningHeight", wintypes.DWORD),
             ]
 
-        dm = DEVMODEW()
+        # Oversized backing buffer: EnumDisplaySettings writes sizeof(DEVMODEW)
+        # bytes, and a short buffer would corrupt memory.
+        buffer = ctypes.create_string_buffer(1024)
+        dm = ctypes.cast(buffer, ctypes.POINTER(DEVMODEW)).contents
         dm.dmSize = ctypes.sizeof(DEVMODEW)
-        if user32.EnumDisplaySettingsW(None, 0xFFFFFFFF, ctypes.byref(dm)):  # ENUM_CURRENT_SETTINGS
-            out["width"] = int(dm.dmPelsWidth) or out["width"]
-            out["height"] = int(dm.dmPelsHeight) or out["height"]
-            out["refresh"] = int(dm.dmDisplayFrequency) or None
-        hdc = user32.GetDC(0)
-        if hdc:
-            try:
-                dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # LOGPIXELSX
-                if dpi:
-                    out["dpi"] = int(dpi)
-                    out["scaling"] = round(100.0 * dpi / 96.0)
-            finally:
-                user32.ReleaseDC(0, hdc)
+        try:
+            if user32.EnumDisplaySettingsW(None, 0xFFFFFFFF, ctypes.byref(dm)):  # ENUM_CURRENT_SETTINGS
+                out["width"] = int(dm.dmPelsWidth) or out["width"]
+                out["height"] = int(dm.dmPelsHeight) or out["height"]
+                out["refresh"] = int(dm.dmDisplayFrequency) or None
+        except Exception:
+            pass
+        try:
+            hdc = user32.GetDC(0)
+            if hdc:
+                try:
+                    dpi = ctypes.windll.gdi32.GetDeviceCaps(hdc, 88)  # LOGPIXELSX
+                    if dpi:
+                        out["dpi"] = int(dpi)
+                        out["scaling"] = round(100.0 * dpi / 96.0)
+                finally:
+                    user32.ReleaseDC(0, hdc)
+        except Exception:
+            pass
     except Exception:
         pass
     return out

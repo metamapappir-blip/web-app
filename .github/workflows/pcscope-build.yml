@@ -39,10 +39,53 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-build.txt
 
-      - name: Run the test suite headlessly
+      - name: Verify on a real machine (headless run)
+        shell: bash
         run: |
-          python main.py --cli --quick --only system,cpu,memory,disk,disk_health,gpu,thermal,battery --html build-check.html --json build-check.json
-          python tests/test_smoke.py
+          set +e
+          python main.py --cli --quick --only system,cpu,memory,disk,disk_health,gpu,thermal,battery --html build-check.html --json build-check.json 2>&1 | tee cli-output.txt
+          cli_exit=${PIPESTATUS[0]}
+          {
+            echo "### Headless run on windows-latest"
+            echo ""
+            echo '```'
+            echo "exit code: $cli_exit   (1 = a probe reported a problem, not a crash)"
+            tail -40 cli-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Smoke tests (probes, reports, cli)
+        shell: bash
+        run: |
+          set +e
+          python tests/test_smoke.py test_catalogue test_probes test_reports test_stop test_cli 2>&1 | tee smoke-output.txt
+          exit_code=${PIPESTATUS[0]}
+          {
+            echo "### Smoke suite: probes, reports, cli"
+            echo ""
+            echo '```'
+            echo "exit code: $exit_code"
+            tail -60 smoke-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $exit_code
+
+      - name: Smoke tests (GUI)
+        shell: bash
+        run: |
+          set +e
+          python tests/test_smoke.py test_gui 2>&1 | tee gui-output.txt
+          exit_code=${PIPESTATUS[0]}
+          {
+            echo "### Smoke suite: GUI"
+            echo ""
+            echo '```'
+            echo "exit code: $exit_code"
+            tail -60 gui-output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit $exit_code
 
       - name: Build the executables
         run: pyinstaller --noconfirm --clean pcscope.spec

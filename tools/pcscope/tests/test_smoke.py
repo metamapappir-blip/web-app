@@ -246,16 +246,29 @@ def test_gui() -> None:
     shutil.rmtree(tmp, ignore_errors=True)
 
 
+ALL_TESTS = (
+    test_catalogue,
+    test_probes,
+    test_reports,
+    test_stop,
+    test_cli,
+    test_gui,
+)
+
+
 def main() -> int:
     started = time.time()
-    for test in (
-        test_catalogue,
-        test_probes,
-        test_reports,
-        test_stop,
-        test_cli,
-        test_gui,
-    ):
+    requested = [arg for arg in sys.argv[1:] if not arg.startswith("-")]
+    if requested:
+        by_name = {test.__name__: test for test in ALL_TESTS}
+        tests = [by_name[name] for name in requested if name in by_name]
+        unknown = [name for name in requested if name not in by_name]
+        for name in unknown:
+            print(f"  FAIL unknown test group: {name}")
+            FAILURES.append(f"unknown group {name}")
+    else:
+        tests = list(ALL_TESTS)
+    for test in tests:
         try:
             test()
         except Exception as exc:  # noqa: BLE001 - report but keep going
