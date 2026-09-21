@@ -543,11 +543,11 @@ class App:
             if verdict:
                 self.details.insert("end", shape(f"{i18n.tr('col.result')}: {verdict}\n\n"))
             for row in result.rows:
-                label = i18n.key_raw(row.label) if row.label in i18n._STRINGS else row.label
-                value = i18n.tr(row.value) if row.value in i18n._STRINGS else row.value
+                label = i18n.key_raw(row.label)
+                value = i18n.verdict_raw(row.value)
                 note = ""
                 if row.note:
-                    note = f"   ({i18n.key_raw(row.note) if row.note in i18n._STRINGS else row.note})"
+                    note = f"   ({i18n.key_raw(row.note)})"
                 if str(value).strip():
                     self.details.insert("end", shape(f"{label}: {value}{note}\n"))
                 else:

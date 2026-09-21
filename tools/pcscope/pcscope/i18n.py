@@ -8,7 +8,7 @@ bidi and shaping on its own.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 LANGS = ("en", "fa")
 
@@ -273,6 +273,7 @@ _STRINGS: Dict[str, List[str]] = {
         "دنبال پیکسل‌هایی بگردید که سیاه، سفید یا روی یک رنگ گیر کرده‌اند.",
     ],
     "monitor.next": ["Next: {name}", "بعدی: {name}"],
+    "monitor.open_hint": ["Opens a separate full-screen window", "یک پنجره تمام‌صفحه جدا باز می‌شود"],
 
     "colour.black": ["Black", "مشکی"],
     "colour.white": ["White", "سفید"],
@@ -387,6 +388,11 @@ def tr(key: str, **kwargs) -> str:
 def t(key: str, **kwargs) -> str:
     """Translate and shape - use this for anything drawn by Tkinter."""
     return shape(tr(key, **kwargs))
+
+
+def has(key: Any) -> bool:
+    """True when ``key`` is one of the translated catalogue keys."""
+    return isinstance(key, str) and key in _STRINGS
 
 
 def key_label(key: str) -> str:

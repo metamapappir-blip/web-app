@@ -70,8 +70,8 @@ class Result:
             summary = i18n.tr(self.summary) if self.summary_is_key else self.summary
             rows = []
             for row in self.rows:
-                label = i18n.key_raw(row.label) if row.label in i18n._STRINGS else row.label
-                note = i18n.tr(row.note) if row.note in i18n._STRINGS else row.note
+                label = i18n.key_raw(row.label)
+                note = i18n.verdict_raw(row.note)
                 rows.append(
                     {
                         "label": label,
@@ -82,7 +82,7 @@ class Result:
                 )
             return {
                 "id": self.id,
-                "title": i18n.tr(self.title_key) if self.title_key in i18n._STRINGS else self.title_key,
+                "title": i18n.key_raw(self.title_key),
                 "status": self.status,
                 "summary": summary,
                 "score": self.score,

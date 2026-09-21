@@ -117,11 +117,11 @@ def write_text(data: ResultSet, path: str, lang: Optional[str] = None) -> str:
             if res.summary:
                 lines.append(f"    {i18n.tr(res.summary) if res.summary_is_key else res.summary}")
             for row in res.rows:
-                label = i18n.key_raw(row.label) if row.label in i18n._STRINGS else row.label
-                value = _verdict(lang, row.value, row.value in i18n._STRINGS)
+                label = i18n.key_raw(row.label)
+                value = _verdict(lang, row.value, i18n.has(row.value))
                 note = ""
                 if row.note:
-                    note = f"  ({i18n.key_raw(row.note) if row.note in i18n._STRINGS else row.note})"
+                    note = f"  ({i18n.key_raw(row.note)})"
                 if not str(value).strip():
                     lines.append(f"    {label}{note}")
                 else:
@@ -192,11 +192,11 @@ def write_html(data: ResultSet, path: str, lang: Optional[str] = None) -> str:
             if res.rows:
                 parts.append("<table>")
                 for row in res.rows:
-                    label = i18n.key_raw(row.label) if row.label in i18n._STRINGS else row.label
-                    value = _verdict(lang, row.value, row.value in i18n._STRINGS)
+                    label = i18n.key_raw(row.label)
+                    value = _verdict(lang, row.value, i18n.has(row.value))
                     note = ""
                     if row.note:
-                        note = i18n.key_raw(row.note) if row.note in i18n._STRINGS else row.note
+                        note = i18n.key_raw(row.note)
                     row_color = _status_color(row.status) if row.status else ""
                     value_html = (
                         f"<span style='color:{row_color}'>{_escape(value)}</span>"
