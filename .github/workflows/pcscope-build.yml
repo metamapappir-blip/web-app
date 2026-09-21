@@ -39,20 +39,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-build.txt
 
+      # The runner log is not always convenient to reach, so each verification
+      # step mirrors its output into a workflow annotation (visible in the UI and
+      # through the checks API).
       - name: Verify on a real machine (headless run)
         shell: bash
         run: |
           set +e
           python main.py --cli --quick --only system,cpu,memory,disk,disk_health,gpu,thermal,battery --html build-check.html --json build-check.json 2>&1 | tee cli-output.txt
           cli_exit=${PIPESTATUS[0]}
-          {
-            echo "### Headless run on windows-latest"
-            echo ""
-            echo '```'
-            echo "exit code: $cli_exit   (1 = a probe reported a problem, not a crash)"
-            tail -40 cli-output.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          EXIT_CODE=$cli_exit ANNOTATION_LEVEL=notice TITLE="headless run" \
+            python -c "import os,pathlib; lines=pathlib.Path('cli-output.txt').read_text(encoding='utf-8',errors='replace').strip().splitlines(); level=os.environ['ANNOTATION_LEVEL']; tail='\n'.join(lines[-25:])[-3400:]; print('::'+level+' title='+os.environ['TITLE']+' (exit '+os.environ['EXIT_CODE']+')::'+tail.replace('%','%25').replace('\r','').replace('\n','%0A'))"
           exit 0
 
       - name: Smoke tests (probes, reports, cli)
@@ -61,14 +58,9 @@ jobs:
           set +e
           python tests/test_smoke.py test_catalogue test_probes test_reports test_stop test_cli 2>&1 | tee smoke-output.txt
           exit_code=${PIPESTATUS[0]}
-          {
-            echo "### Smoke suite: probes, reports, cli"
-            echo ""
-            echo '```'
-            echo "exit code: $exit_code"
-            tail -60 smoke-output.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$exit_code" -ne 0 ]; then level=error; else level=notice; fi
+          EXIT_CODE=$exit_code ANNOTATION_LEVEL=$level TITLE="smoke: probes, reports, cli" \
+            python -c "import os,pathlib; lines=pathlib.Path('smoke-output.txt').read_text(encoding='utf-8',errors='replace').strip().splitlines(); level=os.environ['ANNOTATION_LEVEL']; tail='\n'.join(lines[-30:])[-3400:]; print('::'+level+' title='+os.environ['TITLE']+' (exit '+os.environ['EXIT_CODE']+')::'+tail.replace('%','%25').replace('\r','').replace('\n','%0A'))"
           exit $exit_code
 
       - name: Smoke tests (GUI)
@@ -77,14 +69,9 @@ jobs:
           set +e
           python tests/test_smoke.py test_gui 2>&1 | tee gui-output.txt
           exit_code=${PIPESTATUS[0]}
-          {
-            echo "### Smoke suite: GUI"
-            echo ""
-            echo '```'
-            echo "exit code: $exit_code"
-            tail -60 gui-output.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$exit_code" -ne 0 ]; then level=error; else level=notice; fi
+          EXIT_CODE=$exit_code ANNOTATION_LEVEL=$level TITLE="smoke: gui" \
+            python -c "import os,pathlib; lines=pathlib.Path('gui-output.txt').read_text(encoding='utf-8',errors='replace').strip().splitlines(); level=os.environ['ANNOTATION_LEVEL']; tail='\n'.join(lines[-30:])[-3400:]; print('::'+level+' title='+os.environ['TITLE']+' (exit '+os.environ['EXIT_CODE']+')::'+tail.replace('%','%25').replace('\r','').replace('\n','%0A'))"
           exit $exit_code
 
       - name: Build the executables
