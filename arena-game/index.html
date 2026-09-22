@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>RED ROCK — خونِ مرز</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#0b0906;font-family:Georgia,"Times New Roman",serif;color:#e8d9b5;user-select:none}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
+.hid{display:none!important}
+#vig{position:fixed;inset:0;pointer-events:none;z-index:5;box-shadow:inset 0 0 220px 60px rgba(0,0,0,.75);background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.55) 100%)}
+#hurt{position:fixed;inset:0;pointer-events:none;z-index:6;opacity:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(150,10,5,.85) 100%);transition:opacity .35s}
+#dead{position:fixed;inset:0;pointer-events:none;z-index:7;opacity:0;mix-blend-mode:soft-light;background:#e9b64a;transition:opacity .5s}
+#hud{position:fixed;inset:0;z-index:8;pointer-events:none;direction:ltr}
+.bar{position:absolute;width:230px;height:13px;background:rgba(0,0,0,.55);border:1px solid #6d573a;box-shadow:0 0 0 1px rgba(0,0,0,.6)}
+.bar>i{display:block;height:100%;width:100%;transition:width .18s}
+#hpB{right:20px;top:20px}#hpB>i{background:linear-gradient(#c0392b,#7d1f14)}
+#stB{right:20px;top:40px;height:8px}#stB>i{background:linear-gradient(#d9b45a,#8a6b22)}
+#ddB{right:20px;top:53px;height:8px}#ddB>i{background:linear-gradient(#e8c07a,#a05a12)}
+#core{position:absolute;right:20px;top:70px;text-align:right;text-shadow:0 2px 4px #000;font-size:15px;line-height:1.5}
+#core b{color:#e8b45c}
+#stars{position:absolute;right:20px;top:132px;font-size:18px;letter-spacing:3px;color:#6b5636}
+#stars i{font-style:normal;color:#e8b45c;text-shadow:0 0 8px #d09020}
+#wep{position:absolute;right:20px;bottom:24px;text-align:right;text-shadow:0 2px 4px #000}
+#wep .n{font-size:15px;letter-spacing:2px;color:#d8c39a}
+#wep .a{font-size:40px;font-weight:700;color:#f0dfa8}
+#wep .a s{text-decoration:none;font-size:20px;color:#9a8663}
+#obj{position:absolute;left:20px;top:20px;max-width:330px;background:rgba(12,9,5,.62);border:1px solid #5e4a2e;padding:9px 12px}
+#obj .t{font-size:12px;letter-spacing:3px;color:#c08f3c}
+#obj .d{font-size:17px;color:#f2e5c6;line-height:1.4}
+#obj .p{font-size:13px;color:#c8b184;margin-top:3px}
+#mmw{position:absolute;left:12px;top:80px;width:96px;height:96px;border:1px solid #5e4a2e;background:rgba(8,6,3,.58);border-radius:50%;overflow:hidden;box-shadow:0 0 8px rgba(0,0,0,.5)}
+#mm{width:100%;height:100%;display:block}
+#cross{position:absolute;left:50%;top:50%;width:26px;height:26px;margin:-13px 0 0 -13px}
+#cross:before,#cross:after{content:"";position:absolute;background:rgba(240,225,180,.9);box-shadow:0 0 3px #000}
+#cross:before{left:12px;top:0;width:2px;height:26px}#cross:after{top:12px;left:0;height:2px;width:26px}
+#hint{position:absolute;left:50%;bottom:19%;transform:translateX(-50%);background:rgba(10,8,4,.75);border:1px solid #6d573a;padding:7px 16px;font-size:17px;color:#f0dfa8;white-space:nowrap}
+#hint kbd{background:#2b2114;border:1px solid #7a623c;padding:1px 7px;margin:0 4px;color:#e8b45c}
+#sub{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);max-width:70%;text-align:center;font-size:19px;color:#f6ecd2;text-shadow:0 2px 6px #000,0 0 18px #000;font-style:italic}
+#feed{position:absolute;right:20px;top:160px;text-align:right;font-size:14px;line-height:1.7;color:#d9c49a;text-shadow:0 2px 4px #000}
+#toast{position:absolute;left:50%;top:16%;transform:translateX(-50%);text-align:center}
+#toast .a{font-size:13px;letter-spacing:5px;color:#c08f3c}
+#toast .b{font-size:34px;color:#f4e6c2;text-shadow:0 3px 8px #000}
+#toast .c{font-size:17px;color:#e8b45c}
+.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+background:radial-gradient(ellipse at 50% 40%,#3a2413 0%,#150d06 65%,#080604 100%);overflow:auto}
+.screen h1{font-size:clamp(44px,9vw,110px);letter-spacing:6px;color:#b3231a;text-shadow:0 0 34px rgba(190,60,20,.55),0 6px 0 #2a0f06,0 8px 20px #000;line-height:.95}
+.screen h2{font-size:clamp(17px,2.4vw,26px);color:#e8b45c;letter-spacing:4px;margin:10px 0 26px;font-weight:400}
+.btn{pointer-events:auto;cursor:pointer;font-family:inherit;background:linear-gradient(#8d2b1c,#5c170f);color:#f6e7c4;border:2px solid #d8a44b;
+padding:13px 44px;font-size:21px;letter-spacing:3px;margin:6px;box-shadow:0 6px 20px rgba(0,0,0,.6)}
+.btn:hover{background:linear-gradient(#b03a24,#7a1e12);transform:translateY(-2px)}
+.btn.sm{padding:8px 20px;font-size:15px;letter-spacing:2px}
+.btn.off{background:#241a10;border-color:#5e4a2e;color:#8d7b5c}
+.btn:disabled{opacity:0.5;cursor:wait;transform:none!important}
+#keys{direction:rtl;display:grid;grid-template-columns:auto auto;gap:6px 26px;margin:22px 0 8px;font-size:16px;color:#cbb68d;text-align:right}
+#keys b{color:#e8b45c;text-align:left;direction:ltr}
+.tip{font-size:14px;color:#8f7c5c;margin-top:18px;max-width:620px;line-height:1.7}
+#fps{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);font-size:12px;color:#6f5f45;letter-spacing:1px}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vig"></div><div id="hurt"></div><div id="dead"></div>
+
+<div id="hud" class="hid">
+  <div class="bar" id="hpB"><i></i></div>
+  <div class="bar" id="stB"><i></i></div>
+  <div class="bar" id="ddB"><i></i></div>
+  <div id="core"><b id="mon">$0</b> &nbsp; <span id="bty">جایزه‌بگیر: ۰</span></div>
+  <div id="stars">◈◈◈◈◈</div>
+  <div id="obj"><div class="t">مأموریت</div><div class="d">—</div><div class="p"></div></div>
+  <div id="mmw"><canvas id="mm" width="96" height="96"></canvas></div>
+  <div id="cross"></div>
+  <div id="hint" class="hid"></div>
+  <div id="sub" class="hid"></div>
+  <div id="feed"></div>
+  <div id="toast" class="hid"><div class="a">مأموریت</div><div class="b"></div><div class="c"></div></div>
+  <div id="fps"></div>
+</div>
+
+<div class="screen" id="menu">
+  <h1>RED ROCK</h1>
+  <h2>خونِ مرز — سرزمینِ بی‌قانون</h2>
+  <div>
+    <button class="btn sm" id="q0">کیفیت: پایین</button>
+    <button class="btn sm" id="q1">متوسط</button>
+    <button class="btn sm" id="q2">بالا</button>
+  </div>
+  <button class="btn" id="play">سوار شو</button>
+  <div id="keys">
+    <span>حرکت / دویدن</span><b>W A S D &nbsp;/&nbsp; Shift</b>
+    <span>نشستن &nbsp;/&nbsp; پرش</span><b>Ctrl &nbsp;/&nbsp; Space</b>
+    <span>شلیک &nbsp;/&nbsp; نشانه‌گیری</span><b>کلیک چپ &nbsp;/&nbsp; کلیک راست</b>
+    <span>پر کردن خشاب</span><b>R</b>
+    <span>دد آی (اسلوموشن)</span><b>Q</b>
+    <span>سوار شدن / پیاده شدن</span><b>E</b>
+    <span>تعویض سلاح</span><b>1 / 2</b>
+    <span>نقشه کوچک / علامت مأموریت</span><b>M / H</b>
+    <span>مکث</span><b>Esc</b>
+  </div>
+  <div class="tip">برای گرفتن کنترل ماوس، بعد از «سوار شو» یک بار روی صفحه کلیک کن. سه‌بعدیِ کامل، دنیای باز، روز و شب، اسب، دوئل و جایزه‌بگیرها — همه روی همین لپ‌تاپ ویندوزی.<br>اگر کیفیت بالا لگ زد، از همین‌جا «پایین» را بزن — بدون نیاز به لود بازی.</div>
+  <div class="tip hid" id="err" style="color:#e8a07a;background:rgba(60,20,10,.5);border:1px solid #6b3a2a;padding:10px 14px;max-width:620px">بارگذاری Three.js ناموفق بود — اینترنت لازم است.</div>
+</div>
+
+<div class="screen hid" id="pause">
+  <h1 style="font-size:64px">توقف</h1>
+  <h2 id="pstat"></h2>
+  <button class="btn" id="resume">ادامه</button>
+  <button class="btn sm" id="togq">تغییر کیفیت</button>
+  <button class="btn sm" id="restart">شروع دوباره</button>
+  <div class="tip">Esc برای بازگشت به بازی</div>
+</div>
+
+<div class="screen hid" id="over">
+  <h1 style="color:#7d1f14">مُردی</h1>
+  <h2 id="ostat"></h2>
+  <button class="btn" id="revive">از نو زنده شو</button>
+</div>
+
+<script type="module" src="./game.js?v=5"></script>
+</body>
+</html>
